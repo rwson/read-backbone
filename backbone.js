@@ -50,10 +50,12 @@
     //  事件模块
     var Events = Backbone.Events = {
 
-        //  绑定相关事件
-        //  name: 事件名称
-        //  callback: 事件回调
-        //  context: 上下文作用域 
+        /**
+         *  绑定相关事件
+         *  @param name      事件名称
+         *  @param callback  事件回调
+         *  @param context   上下文执行作用域
+         * */
         on: function(name, callback, context) {
             if (!eventsApi(this, 'on', name, [callback, context]) || !callback) return this;
             this._events || (this._events = {});
@@ -223,14 +225,18 @@
         return true;
     };
 
-    //  据说绑定3个以内的参数用这种方法可以提高执行效率
+    /**
+     *  据说3个以内的参数用这种方法可以提高执行效率
+     *  @param  events  事件对象
+     *  @param  args    参数列表
+     * */
     var triggerEvents = function(events, args) {
         var ev, i = -1,
             l = events.length,
             a1 = args[0],
             a2 = args[1],
             a3 = args[2];
-        //  根据参数个数来判断调用    
+        //  根据参数个数来判断调用
         switch (args.length) {
             case 0:
                 while (++i < l)(ev = events[i]).callback.call(ev.ctx);
@@ -250,7 +256,7 @@
         }
     };
 
-    //  设置别名
+    //  设置相关别名
     Events.bind = Events.on;
     Events.unbind = Events.off;
 
@@ -608,47 +614,77 @@
     // Create a new **Collection**, perhaps to contain a specific type of `model`.
     // If a `comparator` is specified, the Collection will maintain
     // its models in sort order, as they're added and removed.
+    /**
+     *  Collection模块
+     *  @param  models  model实例
+     *  @params options 参数(Object)
+     * */
     var Collection = Backbone.Collection = function(models, options) {
+        //  没有传入options,就指定options为空对象
         options || (options = {});
+
+        //  options中指定了model
         if (options.model) this.model = options.model;
+
+        //  传入了comparator,void 0指代undefined,这样避免undefined被重写
         if (options.comparator !== void 0) this.comparator = options.comparator;
+
+        //  解绑和成员属性的一些关联
         this._reset();
+
+        //  初始化方法
         this.initialize.apply(this, arguments);
+
+        //  在调用model.set或者collection.add等事件时,会默认触发一个函数,可以通过silent: true来进行组织
         if (models) this.reset(models, _.extend({ silent: true }, options));
     };
 
-    // Default options for `Collection#set`.
+    //  model.set的参数、collection.add的参数
     var setOptions = { add: true, remove: true, merge: true };
     var addOptions = { add: true, remove: false };
 
-    // Define the Collection's inheritable methods.
+    //  拓展Collection原型属性下相关事件
     _.extend(Collection.prototype, Events, {
 
         //  collection中的model属性
         model: Model,
 
-        //  初始化函数
+        /**
+         *  初始化函数
+         * */
         initialize: function() {},
 
-        //  取得每一个Model下的attributes中相关的值
+        /**
+         *  取得每一个Model下的attributes中相关的值,组成一个
+         *  @param options  无用参数
+         * */
         toJSON: function(options) {
             return this.map(function(model) {
                 return model.toJSON(options); 
             });
         },
 
-        // Proxy `Backbone.sync` by default.
+        /**
+         *  代理执行Backbone.sync方法
+         * */
         sync: function() {
             return Backbone.sync.apply(this, arguments);
         },
 
-        // Add a model, or list of models to the set.
+        /**
+         *  添加一个model实例到当前collection
+         *  @param models
+         *  @param options
+         * */
         add: function(models, options) {
             return this.set(models, _.extend({ merge: false }, options, addOptions));
         },
 
-        // Remove a model, or a list of models from the set.
+        /**
+         *  删除当前collection中的一个model或者一个由model组成的list
+         * */
         remove: function(models, options) {
+            //  是否只有一个model,如果models不是一个数组,就认定为只有一个model,而不是list
             var singular = !_.isArray(models);
             models = singular ? [models] : _.clone(models);
             options || (options = {});
