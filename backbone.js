@@ -970,13 +970,9 @@
             return _.invoke(this.models, 'get', attr);
         },
 
-        // Fetch the default set of models for this collection, resetting the
-        // collection when they arrive. If `reset: true` is passed, the response
-        // data will be passed through the `reset` method instead of `set`.
         /**
          * 集合对象下的fetch方法,从后端取得数据
          * @param options   相关配置参数
-         *
          * */
         fetch: function (options) {
             options = options ? _.clone(options) : {};
@@ -1024,7 +1020,10 @@
             return resp;
         },
 
-        //  克隆当前Collection
+        /**
+         * 克隆当前Collection
+         * @returns {Function}
+         */
         clone: function () {
             return new this.constructor(this.models, {
                 model: this.model,
@@ -1032,20 +1031,30 @@
             });
         },
 
-        //  获取该模型的id
+        /**
+         * 获取该模型的id
+         * @param attrs 属性列表
+         * @returns {*}
+         */
         modelId: function (attrs) {
             return attrs[this.model.prototype.idAttribute || 'id'];
         },
 
-        //  Collection下的reset,重置对象下的一些静态属性
+        /**
+         * Collection下的reset,重置对象下的一些静态属性
+         * @private
+         */
         _reset: function () {
             this.length = 0;
             this.models = [];
             this._byId = {};
         },
 
-        // Prepare a hash of attributes (or other model) to be added to this
-        // collection.
+        /**
+         * 准备创建一个model实例
+         * @param attrs     属性
+         * @param options   选项参数
+         * */
         _prepareModel: function (attrs, options) {
             //  如果是Model实例
             if (this._isModel(attrs)) {
@@ -1069,12 +1078,17 @@
             return false;
         },
 
-        //  判断是否是一个Model的实例
+        /**
+         * 判断是否是一个Model的实例
+         * */
         _isModel: function (model) {
             return model instanceof Model;
         },
 
-        //  绑定与某个model,并且监听该model的所有事件
+        /**
+         * 绑定与某个model,并且监听该model的所有事件
+         * @param model
+         * */
         _addReference: function (model, options) {
             this._byId[model.cid] = model;
             var id = this.modelId(model.attributes);
@@ -1082,16 +1096,20 @@
             model.on('all', this._onModelEvent, this);
         },
 
-        //  删除某个model与集合的联系,主要是删除相关事件的监听
+        /**
+         * 删除某个model与集合的联系,主要是删除相关事件的监听
+         * @param model     model实例
+         * @param options   选项参数
+         * */
         _removeReference: function (model, options) {
             if (this === model.collection) delete model.collection;
+            //  解除所以事件
             model.off('all', this._onModelEvent, this);
         },
 
-        // Internal method called every time a model in the set fires an event.
-        // Sets need to update their indexes when models change ids. All other
-        // events simply proxy through. "add" and "remove" events that originate
-        // in other collections are ignored.
+        /**
+         * model上的一些事件
+         * */
         _onModelEvent: function (event, model, collection, options) {
             if ((event === 'add' || event === 'remove') && collection !== this) return;
             if (event === 'destroy') this.remove(model, options);
@@ -1166,35 +1184,38 @@
     // Cached regex to split keys for `delegate`.
     var delegateEventSplitter = /^(\S+)\s*(.*)$/;
 
-    // List of view options to be merged as properties.
+    //  view实例的相关属性
     var viewOptions = ['model', 'collection', 'el', 'id', 'attributes', 'className', 'tagName', 'events'];
 
-    // Set up all inheritable **Backbone.View** properties and methods.
+    //  拓展view下的事件模块
     _.extend(View.prototype, Events, {
 
-        // The default `tagName` of a View's element is `"div"`.
+        //  标签名
         tagName: 'div',
 
-        // jQuery delegate for element lookup, scoped to DOM elements within the
-        // current view. This should be preferred to global lookups where possible.
+        /**
+         *  代理执行jQuery中的find方法,缩小查找的context
+         * */
         $: function (selector) {
             return this.$el.find(selector);
         },
 
-        // Initialize is an empty function by default. Override it with your own
-        // initialization logic.
+        /**
+         *  初始化方法
+         * */
         initialize: function () {
         },
 
-        // **render** is the core function that your view should override, in order
-        // to populate its element (`this.el`), with the appropriate HTML. The
-        // convention is for **render** to always return `this`.
+        /**
+         *  渲染视图
+         * */
         render: function () {
             return this;
         },
 
-        // Remove this view by taking the element out of the DOM, and removing any
-        // applicable Backbone.Events listeners.
+        /**
+         *  从DOM中删除该视图,移除model/collection上的事件监听
+         * */
         remove: function () {
             this._removeElement();
             this.stopListening();
