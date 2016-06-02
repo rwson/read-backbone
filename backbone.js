@@ -1160,19 +1160,6 @@
         };
     });
 
-    // Backbone.View
-    // -------------
-
-    // Backbone Views are almost more convention than they are actual code. A View
-    // is simply a JavaScript object that represents a logical chunk of UI in the
-    // DOM. This might be a single item, an entire list, a sidebar or panel, or
-    // even the surrounding frame which wraps your whole app. Defining a chunk of
-    // UI as a **View** allows you to define your DOM events declaratively, without
-    // having to worry about render order ... and makes it easy for the view to
-    // react to specific changes in the state of your models.
-
-    // Creating a Backbone.View creates its initial element outside of the DOM,
-    // if an existing element is not provided...
     var View = Backbone.View = function (options) {
         this.cid = _.uniqueId('view');
         options || (options = {});
@@ -1222,89 +1209,97 @@
             return this;
         },
 
-        // Remove this view's element from the document and all event listeners
-        // attached to it. Exposed for subclasses using an alternative DOM
-        // manipulation API.
+        /**
+         *  删除当前视图中对应的元素
+         * */
         _removeElement: function () {
             this.$el.remove();
         },
 
-        // Change the view's element (`this.el` property) and re-delegate the
-        // view's events on the new element.
+        /**
+         *  设置相关元素的事件
+         *  @param  element     元素对象
+         * */
         setElement: function (element) {
+            //  解绑相关事件
             this.undelegateEvents();
+            //  处理相关元素
             this._setElement(element);
+            //  代理相关事件
             this.delegateEvents();
             return this;
         },
 
-        // Creates the `this.el` and `this.$el` references for this view using the
-        // given `el`. `el` can be a CSS selector or an HTML string, a jQuery
-        // context or an element. Subclasses can override this to utilize an
-        // alternative DOM manipulation API and are only required to set the
-        // `this.el` property.
+        /**
+         *  处理相关元素
+         *  @param  el     元素对象
+         * */
         _setElement: function (el) {
+            //  判断当前元素是否是一个jQuery实例
             this.$el = el instanceof Backbone.$ ? el : Backbone.$(el);
             this.el = this.$el[0];
         },
 
-        // Set callbacks, where `this.events` is a hash of
-        //
-        // *{"event selector": "callback"}*
-        //
-        //     {
-        //       'mousedown .title':  'edit',
-        //       'click .button':     'save',
-        //       'click .open':       function(e) { ... }
-        //     }
-        //
-        // pairs. Callbacks will be bound to the view, with `this` set properly.
-        // Uses event delegation for efficiency.
-        // Omitting the selector binds the event to `this.el`.
+        /**
+         *  事件代理
+         *  @param  events  对象(key:"eventName selector",value:callback)
+         * */
         delegateEvents: function (events) {
             if (!(events || (events = _.result(this, 'events')))) return this;
+            //  解绑相关事件
             this.undelegateEvents();
+            //  遍历该事件对象
             for (var key in events) {
                 var method = events[key];
+                //  判断key对应的value是否是方法,如果不是,跳出本次遍历
                 if (!_.isFunction(method)) method = this[events[key]];
                 if (!method) continue;
                 var match = key.match(delegateEventSplitter);
+                //  代理事件
                 this.delegate(match[1], match[2], _.bind(method, this));
             }
             return this;
         },
 
-        // Add a single event listener to the view's element (or a child element
-        // using `selector`). This only works for delegate-able events: not `focus`,
-        // `blur`, and not `change`, `submit`, and `reset` in Internet Explorer.
+        /**
+         *  通过选择器绑定事件
+         *  @param  eventName   事件名
+         *  @param  selector    选择器
+         *  @param  listener    事件对应的回调
+         * */
         delegate: function (eventName, selector, listener) {
             this.$el.on(eventName + '.delegateEvents' + this.cid, selector, listener);
         },
 
-        // Clears all callbacks previously bound to the view by `delegateEvents`.
-        // You usually don't need to use this, but may wish to if you have multiple
-        // Backbone views attached to the same DOM element.
+        /**
+         *  解绑当前元素上所有事件
+         * */
         undelegateEvents: function () {
             if (this.$el) this.$el.off('.delegateEvents' + this.cid);
             return this;
         },
 
-        // A finer-grained `undelegateEvents` for removing a single delegated event.
-        // `selector` and `listener` are both optional.
+        /**
+         *  解除相关事件绑定
+         *  @param  eventName   事件名
+         *  @param  selector    选择器
+         *  @param  listener    事件对应的回调
+         * */
         undelegate: function (eventName, selector, listener) {
             this.$el.off(eventName + '.delegateEvents' + this.cid, selector, listener);
         },
 
-        // Produces a DOM element to be assigned to your view. Exposed for
-        // subclasses using an alternative DOM manipulation API.
+        /**
+         *  创建元素
+         *  @param  tagName     标签名
+         * */
         _createElement: function (tagName) {
             return document.createElement(tagName);
         },
 
-        // Ensure that the View has a DOM element to render into.
-        // If `this.el` is a string, pass it through `$()`, take the first
-        // matching element, and re-assign it to `el`. Otherwise, create
-        // an element from the `id`, `className` and `tagName` properties.
+        /**
+         *  设置视图对应的元素的相关属性
+         * */
         _ensureElement: function () {
             if (!this.el) {
                 var attrs = _.extend({}, _.result(this, 'attributes'));
@@ -1317,63 +1312,44 @@
             }
         },
 
-        // Set attributes from a hash on this view's element.  Exposed for
-        // subclasses using an alternative DOM manipulation API.
+        /**
+         *  设置元素的属性
+         * */
         _setAttributes: function (attributes) {
             this.$el.attr(attributes);
         }
 
     });
 
-    // Backbone.sync
-    // -------------
-
-    // Override this function to change the manner in which Backbone persists
-    // models to the server. You will be passed the type of request, and the
-    // model in question. By default, makes a RESTful Ajax request
-    // to the model's `url()`. Some possible customizations could be:
-    //
-    // * Use `setTimeout` to batch rapid-fire updates into a single request.
-    // * Send up the models as XML instead of JSON.
-    // * Persist models via WebSockets instead of Ajax.
-    //
-    // Turn on `Backbone.emulateHTTP` in order to send `PUT` and `DELETE` requests
-    // as `POST`, with a `_method` parameter containing the true HTTP method,
-    // as well as all requests with the body as `application/x-www-form-urlencoded`
-    // instead of `application/json` with the model in a param named `model`.
-    // Useful when interfacing with server-side languages like **PHP** that make
-    // it difficult to read the body of `PUT` requests.
+    //  异步请求
     Backbone.sync = function (method, model, options) {
         var type = methodMap[method];
 
-        // Default options, unless specified.
         _.defaults(options || (options = {}), {
             emulateHTTP: Backbone.emulateHTTP,
             emulateJSON: Backbone.emulateJSON
         });
 
-        // Default JSON-request options.
         var params = {type: type, dataType: 'json'};
 
-        // Ensure that we have a URL.
+        //  确保传入了url,否则抛出异常
         if (!options.url) {
             params.url = _.result(model, 'url') || urlError();
         }
 
-        // Ensure that we have the appropriate request data.
+        //
         if (options.data == null && model && (method === 'create' || method === 'update' || method === 'patch')) {
             params.contentType = 'application/json';
             params.data = JSON.stringify(options.attrs || model.toJSON(options));
         }
 
-        // For older servers, emulate JSON by encoding the request into an HTML-form.
+        //  JSON仿真
         if (options.emulateJSON) {
             params.contentType = 'application/x-www-form-urlencoded';
             params.data = params.data ? {model: params.data} : {};
         }
 
-        // For older servers, emulate HTTP by mimicking the HTTP method with `_method`
-        // And an `X-HTTP-Method-Override` header.
+        //
         if (options.emulateHTTP && (type === 'PUT' || type === 'DELETE' || type === 'PATCH')) {
             params.type = 'POST';
             if (options.emulateJSON) params.data._method = type;
@@ -1389,7 +1365,7 @@
             params.processData = false;
         }
 
-        // Pass along `textStatus` and `errorThrown` from jQuery.
+        //
         var error = options.error;
         options.error = function (xhr, textStatus, errorThrown) {
             options.textStatus = textStatus;
@@ -1397,7 +1373,7 @@
             if (error) error.apply(this, arguments);
         };
 
-        // Make the request, allowing the user to override any Ajax options.
+        //  发送请求
         var xhr = options.xhr = Backbone.ajax(_.extend(params, options));
         model.trigger('request', model, xhr, options);
         return xhr;
@@ -1432,11 +1408,12 @@
     var splatParam = /\*\w+/g;
     var escapeRegExp = /[\-{}\[\]+?.,\\\^$|#\s]/g;
 
-    // Set up all inheritable **Backbone.Router** properties and methods.
+    //  拓展路由模块的事件对象
     _.extend(Router.prototype, Events, {
 
-        // Initialize is an empty function by default. Override it with your own
-        // initialization logic.
+        /**
+         *  初始化方法
+         * */
         initialize: function () {
         },
 
@@ -1471,7 +1448,9 @@
             if (callback) callback.apply(this, args);
         },
 
-        // Simple proxy to `Backbone.history` to save a fragment into the history.
+        /**
+         *  导航到指定路由
+         * */
         navigate: function (fragment, options) {
             Backbone.history.navigate(fragment, options);
             return this;
@@ -1520,7 +1499,9 @@
         this.handlers = [];
         _.bindAll(this, 'checkUrl');
 
-        // Ensure that `History` can be used outside of the browser.
+        /**
+         *  判断当前执行环境是不是浏览器
+         * */
         if (typeof window !== 'undefined') {
             this.location = window.location;
             this.history = window.history;
@@ -1552,21 +1533,28 @@
             return path === this.root && !this.getSearch();
         },
 
-        // In IE6, the hash fragment and search params are incorrect if the
-        // fragment contains `?`.
+        /**
+         *  判断url中是否含有查询字符串
+         * */
         getSearch: function () {
             var match = this.location.href.replace(/#.*/, '').match(/\?.+/);
             return match ? match[0] : '';
         },
 
-        // Gets the true hash value. Cannot use location.hash directly due to bug
-        // in Firefox where location.hash will always be decoded.
+        /**
+         * 获取当前url中的hash值
+         * @param window    window对象
+         * @returns {*}
+         */
         getHash: function (window) {
             var match = (window || this).location.href.match(/#(.*)$/);
             return match ? match[1] : '';
         },
 
-        // Get the pathname and search params, without the root.
+        /**
+         * 获取当前url的路径
+         * @returns {string}
+         */
         getPath: function () {
             var path = decodeURI(this.location.pathname + this.getSearch());
             var root = this.root.slice(0, -1);
@@ -1684,8 +1672,11 @@
             History.started = false;
         },
 
-        // Add a route to be tested when the fragment changes. Routes added later
-        // may override previous routes.
+        /**
+         * 当页面显示内容发生变化,往路由前面插入一项
+         * @param route     路由
+         * @param callback  回调函数
+         */
         route: function (route, callback) {
             this.handlers.unshift({route: route, callback: callback});
         },
@@ -1770,34 +1761,39 @@
             if (options.trigger) return this.loadUrl(fragment);
         },
 
-        //  更新浏览器地址栏的哈希值
+        /**
+         * 更新浏览器地址栏的哈希值
+         * @param location  location对象
+         * @param fragment
+         * @param replace   替换字符串
+         * @private
+         */
         _updateHash: function (location, fragment, replace) {
             if (replace) {
                 var href = location.href.replace(/(javascript:|#).*$/, '');
                 location.replace(href + '#' + fragment);
             } else {
-                // Some browsers require that `hash` contains a leading #.
+                //  直接用location.hash修改hash值
                 location.hash = '#' + fragment;
             }
         }
 
     });
 
-    // Create the default Backbone.history.
+    // History模块
     Backbone.history = new History;
 
-    //  工具函数
-
-    // Helper function to correctly set up the prototype chain, for subclasses.
-    // Similar to `goog.inherits`, but uses a hash of prototype properties and
-    // class properties to be extended.
+    /**
+     * 继承
+     * @param protoProps    原型属性
+     * @param staticProps   静态属性
+     * @returns {*}
+     */
     var extend = function (protoProps, staticProps) {
         var parent = this;
         var child;
 
-        // The constructor function for the new subclass is either defined by you
-        // (the "constructor" property in your `extend` definition), or defaulted
-        // by us to simply call the parent's constructor.
+        //  原型属性中包含constructor,修改子类的构造方法
         if (protoProps && _.has(protoProps, 'constructor')) {
             child = protoProps.constructor;
         } else {
@@ -1825,7 +1821,7 @@
         return child;
     };
 
-    // Set up inheritance for the model, collection, router, view and history.
+    //  设置Model/Collection/Router/View/History的继承属性
     Model.extend = Collection.extend = Router.extend = View.extend = History.extend = extend;
 
     //  url异常函数封装
@@ -1833,7 +1829,7 @@
         throw new Error('A "url" property or function must be specified');
     };
 
-    // Wrap an optional error callback with a fallback error event.
+    // 错误信息包装
     var wrapError = function (model, options) {
         var error = options.error;
         options.error = function (resp) {
