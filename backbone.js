@@ -1416,19 +1416,24 @@
          * */
         initialize: function () {
         },
-
-        // Manually bind a single named route to a callback. For example:
-        //
-        //     this.route('search/:query/p:num', 'search', function(query, num) {
-        //       ...
-        //     });
-        //
+        /**
+         * 配置路由方法
+         * @param route         路由
+         * @param name          路由名称/回调
+         * @param callback      回调
+         * @returns {Router}
+         */
         route: function (route, name, callback) {
+            //  将路由转换成正则表达式
             if (!_.isRegExp(route)) route = this._routeToRegExp(route);
+
+            //  判断第二个参数是否是一个方法,修改参数
             if (_.isFunction(name)) {
                 callback = name;
                 name = '';
             }
+
+            //  没有传入参数
             if (!callback) callback = this[name];
             var router = this;
             Backbone.history.route(route, function (fragment) {
@@ -1442,8 +1447,12 @@
             return this;
         },
 
-        // Execute a route handler with the provided parameters.  This is an
-        // excellent place to do pre-route setup or post-route cleanup.
+        /**
+         * 执行某个方法
+         * @param callback  回调函数
+         * @param args      参数(Array)
+         * @param name      名称
+         */
         execute: function (callback, args, name) {
             if (callback) callback.apply(this, args);
         },
@@ -1456,9 +1465,10 @@
             return this;
         },
 
-        // Bind all defined routes to `Backbone.history`. We have to reverse the
-        // order of the routes here to support behavior where the most general
-        // routes can be defined at the bottom of the route map.
+        /**
+         * 从后往前绑定路由
+         * @private
+         */
         _bindRoutes: function () {
             if (!this.routes) return;
             this.routes = _.result(this, 'routes');
@@ -1468,8 +1478,12 @@
             }
         },
 
-        // Convert a route string into a regular expression, suitable for matching
-        // against the current location hash.
+        /**
+         * 将路由转换成一个正则表达式
+         * @param route     路由
+         * @returns {RegExp}
+         * @private
+         */
         _routeToRegExp: function (route) {
             route = route.replace(escapeRegExp, '\\$&')
                 .replace(optionalParam, '(?:$1)?')
@@ -1480,13 +1494,15 @@
             return new RegExp('^' + route + '(?:\\?([\\s\\S]*))?$');
         },
 
-        // Given a route, and a URL fragment that it matches, return the array of
-        // extracted decoded parameters. Empty or unmatched parameters will be
-        // treated as `null` to normalize cross-browser behavior.
+        /**
+         * 提取路由参数
+         * @param route     路由
+         * @param fragment  页面对象
+         * @private
+         */
         _extractParameters: function (route, fragment) {
             var params = route.exec(fragment).slice(1);
             return _.map(params, function (param, i) {
-                // Don't decode the search params.
                 if (i === params.length - 1) return param || null;
                 return param ? decodeURIComponent(param) : null;
             });
@@ -1517,17 +1533,19 @@
     // Cached regex for stripping urls of hash.
     var pathStripper = /#.*$/;
 
-    // Has the history handling already been started?
+    //  标识history是否已经开始
     History.started = false;
 
-    // Set up all inheritable **Backbone.History** properties and methods.
+    //  拓展History模块下的事件原型
     _.extend(History.prototype, Events, {
 
-        // The default interval to poll for hash changes, if necessary, is
-        // twenty times a second.
+        //  定时器,轮询hash的改变
         interval: 50,
 
-        // Are we at the app root?
+        /**
+         * 是否在首页的位置
+         * @returns {boolean}
+         */
         atRoot: function () {
             var path = this.location.pathname.replace(/[^\/]$/, '$&/');
             return path === this.root && !this.getSearch();
@@ -1686,8 +1704,7 @@
         checkUrl: function (e) {
             var current = this.getFragment();
 
-            // If the user pressed the back button, the iframe's hash will have
-            // changed and we should use that for comparison.
+            //  用户点击了后退按钮,iframe的hash也会随之发生变化,所以应该进行比较
             if (current === this.fragment && this.iframe) {
                 current = this.getHash(this.iframe);
             }
